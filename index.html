@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF QR Code Reader</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr/dist/jsQR.js"></script>
+    <style>
+        .loading {
+            display: none;
+        }
+        .file-info {
+            margin-top: 20px;
+        }
+        #canvas {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>Sube la constancia</h2>
+    
+    <!-- File input for PDF upload -->
+    <input type="file" id="pdfFileInput" accept="application/pdf">
+    
+    <!-- Loading spinner -->
+    <div class="loading">
+        <img src="https://i.imgur.com/llF5iyg.gif" alt="Loading...">
+    </div>
+    
+    <!-- Display selected PDF file name -->
+    <div class="file-info">
+        <p id="fileName">Ningún archivo seleccionado.</p>
+    </div>
+    
+    <!-- Canvas for rendering PDF page -->
+    <canvas id="canvas"></canvas>
+    
+    <div id="qrResult"></div>
+
+    <script>
+        $(document).ready(function() {
+            // Handle file selection
+            $('#pdfFileInput').change(function(event) {
+                var file = event.target.files[0];
+                if (file && file.type === 'application/pdf') {
+                    $('#fileName').text('Processing PDF: ' + file.name);
+                    $('.loading').show(); // Show loading spinner
+                    processPDF(file);
+                } else {
+                    alert('Please upload a valid PDF file.');
+                    $('#fileName').text('No file selected.');
+                }
+            });
+            
+            function processPDF(file) {
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    var typedarray = new Uint8Array(e.target.result);
+
+                    // Use PDF.js to load the PDF
+                    pdfjsLib.getDocument(typedarray).promise.then(function(pdf) {
+                        console.log("PDF loaded");
+                        
+                        // Get the first page (You can extend this for multiple pages)
+                        pdf.getPage(1).then(function(page) {
+                            var scale = 1.5;
+                            var viewport = page.getViewport({ scale: scale });
+                            
+                            var canvas = document.getElementById('canvas');
+                            var context = canvas.getContext('2d');
+                            canvas.height = viewport.height;
+                            canvas.width = viewport.width;
+
+                            // Render the page onto the canvas
+                            page.render({ canvasContext: context, viewport: viewport }).promise.then(function() {
+                                // Now we have the PDF page rendered as an image in the canvas
+                                extractQRCode(canvas);
+                            });
+                        });
+                    });
+                };
+                reader.readAsArrayBuffer(file);
+            }
+
+            function extractQRCode(canvas) {
+                var context = canvas.getContext('2d');
+                var imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+                var code = jsQR(imageData.data, imageData.width, imageData.height);
+
+                if (code) {
+                    window.location.href=code.data;
+                    $('#qrResult').html('<p>Datos Fiscales: <a href="' + code.data + '" target="_blank">' + code.data + '</a></p>');
+                    $('.loading').hide(); // Hide loading spinner
+                } else {
+                    $('#qrResult').html('<p>Archivo sin QR.</p>');
+                    $('.loading').hide(); // Hide loading spinner
+                }
+            }
+        });
+    </script>
+
+</body>
+</html>
