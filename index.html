@@ -42,7 +42,7 @@
     <div id="qrResult"></div>
 
     <script>
-        console.log('build 2');
+        console.log('build 3');
         $(document).ready(function() {
             const urlParams = new URLSearchParams(window.location.search);
 
@@ -99,16 +99,16 @@
             function modifyUrl(url, order, total) {
                 const urlObj = new URL(url);
 
-                // Remove the 'D3' parameter first if it exists (we will manually place it later)
-                urlObj.searchParams.delete('D3');
-
+                // Get the current value of 'D3' before we modify anything
+                const D3Value = urlObj.searchParams.get('D3');
+            
                 // Manually rebuild the URL, inserting D8 and D9 before D3
                 const newUrl = urlObj.origin + urlObj.pathname + '?' + 
                     'D1=' + urlObj.searchParams.get('D1') + '&' +
                     'D2=' + urlObj.searchParams.get('D2') + '&' +
                     'D8=' + order + '&' +
                     'D9=' + total + '&' +
-                    'D3=' + urlObj.searchParams.get('D3'); // Add D3 last
+                    'D3=' + D3Value;  // Add D3 last
                 
                 return newUrl;
             }
@@ -137,5 +137,6 @@
 
 </body>
 </html>
+
 
 
