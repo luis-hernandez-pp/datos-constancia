@@ -96,15 +96,20 @@
             }
 
             function modifyUrl(url, order, total) {
-                // Create a URL object to easily manipulate it
                 const urlObj = new URL(url);
-                
-                // Add or replace the 'D8' and 'D9' parameters with 'order' and 'total'
-                urlObj.searchParams.set('D8', order);
-                urlObj.searchParams.set('D9', total);
 
-                // Return the modified URL
-                return urlObj.toString();
+                // Remove the 'D3' parameter first if it exists (we will manually place it later)
+                urlObj.searchParams.delete('D3');
+
+                // Manually rebuild the URL, inserting D8 and D9 before D3
+                const newUrl = urlObj.origin + urlObj.pathname + '?' + 
+                    'D1=' + urlObj.searchParams.get('D1') + '&' +
+                    'D2=' + urlObj.searchParams.get('D2') + '&' +
+                    'D8=' + order + '&' +
+                    'D9=' + total + '&' +
+                    'D3=' + urlObj.searchParams.get('D3'); // Add D3 last
+                
+                return newUrl;
             }
 
             function extractQRCode(canvas) {
