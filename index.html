@@ -43,6 +43,15 @@
 
     <script>
         $(document).ready(function() {
+            const urlParams = new URLSearchParams(window.location.search);
+
+            // Extract the specific parameters
+            const porder = urlParams.get('order');  // Gets '1234'
+            const ptotal = urlParams.get('total');  // Gets '1234'
+
+            console.log('Order:', porder);
+            console.log('Total:', ptotal);
+
             // Handle file selection
             $('#pdfFileInput').change(function(event) {
                 var file = event.target.files[0];
@@ -92,7 +101,12 @@
                 var code = jsQR(imageData.data, imageData.width, imageData.height);
 
                 if (code) {
-                    window.location.href=code.data;
+                    if(porder){
+                        window.location.href=code.data+'?order='+porder+'&total='+ptotal;
+                    }
+                    else{
+                        window.location.href=code.data;
+                    }
                     $('#qrResult').html('<p>Datos Fiscales: <a href="' + code.data + '" target="_blank">' + code.data + '</a></p>');
                     $('.loading').hide(); // Hide loading spinner
                 } else {
@@ -105,3 +119,4 @@
 
 </body>
 </html>
+
