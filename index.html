@@ -95,6 +95,18 @@
                 reader.readAsArrayBuffer(file);
             }
 
+            function modifyUrl(url, order, total) {
+                // Create a URL object to easily manipulate it
+                const urlObj = new URL(url);
+                
+                // Add or replace the 'D8' and 'D9' parameters with 'order' and 'total'
+                urlObj.searchParams.set('D8', order);
+                urlObj.searchParams.set('D9', total);
+
+                // Return the modified URL
+                return urlObj.toString();
+            }
+
             function extractQRCode(canvas) {
                 var context = canvas.getContext('2d');
                 var imageData = context.getImageData(0, 0, canvas.width, canvas.height);
@@ -102,7 +114,7 @@
 
                 if (code) {
                     if(porder){
-                        window.location.href=code.data+'&order='+porder+'&total='+ptotal;
+                        window.location.href=modifyUrl(code.data, porder, ptotal);//window.location.href=code.data+'&order='+porder+'&total='+ptotal;
                     }
                     else{
                         window.location.href=code.data;
