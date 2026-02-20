@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PDF QR Code Reader</title>
+    <title>AUTO FACTURADOR</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsqr/dist/jsQR.js"></script>
@@ -41,8 +41,10 @@
     
     <div id="qrResult"></div>
 
+    <div id="content"></div>
+
     <script>
-        console.log('build 3');
+        console.log('made with ❤︎⁠ by LK/SH');
         $(document).ready(function() {
             const urlParams = new URLSearchParams(window.location.search);
 
@@ -99,16 +101,16 @@
             function modifyUrl(url, order, total) {
                 const urlObj = new URL(url);
 
-                // Get the current value of 'D3' before we modify anything
-                const D3Value = urlObj.searchParams.get('D3');
-            
+                // Remove the 'D3' parameter first if it exists (we will manually place it later)
+                urlObj.searchParams.delete('D3');
+
                 // Manually rebuild the URL, inserting D8 and D9 before D3
                 const newUrl = urlObj.origin + urlObj.pathname + '?' + 
                     'D1=' + urlObj.searchParams.get('D1') + '&' +
                     'D2=' + urlObj.searchParams.get('D2') + '&' +
                     'D8=' + order + '&' +
                     'D9=' + total + '&' +
-                    'D3=' + D3Value;  // Add D3 last
+                    'D3=' + urlObj.searchParams.get('D3'); // Add D3 last
                 
                 return newUrl;
             }
@@ -120,7 +122,14 @@
 
                 if (code) {
                     if(porder){
-                        window.location.href=modifyUrl(code.data, porder, ptotal);//window.location.href=code.data+'&order='+porder+'&total='+ptotal;
+                        fetch(code.data)
+                            .then(response => response.text())
+                            .then(data => {
+                                document.getElementById('content').innerHTML = data;
+                                autoInvoicing(porder,ptotal);
+                            })
+                            .catch(error => console.error('Error fetching content:', error));
+                        //window.location.href=modifyUrl(code.data, porder, ptotal);//window.location.href=code.data+'&order='+porder+'&total='+ptotal;
                     }
                     else{
                         window.location.href=code.data;
@@ -132,11 +141,80 @@
                     $('.loading').hide(); // Hide loading spinner
                 }
             }
+
+            const preregimes=[
+                "601 - General de Ley Personas Morales",
+                "603 - Personas Morales con Fines no Lucrativos",
+                "605 - Sueldos y Salarios e Ingresos Asimilados a Salarios",
+                "606 - Arrendamiento",
+                "607 - Régimen de Enajenación o Adquisición de Bienes",
+                "608 - Demás ingresos",
+                "610 - Residentes en el Extranjero sin Establecimiento Permanente en México",
+                "611 - Ingresos por Dividendos (socios y accionistas)",
+                "612 - Personas Físicas con Actividades Empresariales y Profesionales",
+                "614 - Ingresos por intereses",
+                "615 - Régimen de los Ingresos por Obtención de Premios",
+                "616 - Sin obligaciones fiscales",
+                "620 - Sociedades Cooperativas de Producción que optan por diferir sus ingresos",
+                "621 - Incorporación Fiscal (derogado a partir de 2022, solo vigente para quienes aún aplican transición)",
+                "622 - Actividades Agrícolas, Ganaderas, Silvícolas y Pesqueras",
+                "623 - Opcional para Grupos de Sociedades",
+                "624 - Coordinados",
+                "625 - Régimen de las Actividades Empresariales con ingresos a través de Plataformas Tecnológicas",
+                "626 - Régimen Simplificado de Confianza (RESICO)",
+                "628 - Hidrocarburos",
+                "629 - De los Regímenes Fiscales Preferentes y de las Empresas Multinacionales",
+                "630 - Enajenación de acciones en bolsa de valores"
+            ];
+            function autoInvoicing(porderz,ptotalz){
+                var rfc='';
+                $('li').each(function(){
+                    if($(this).text().includes('El RFC:')){
+                        rfc=$(this).text().split(',')[0].replace('El RFC: ','');
+                    }
+                });
+                var razonSocial=$('.ui-widget-content').eq(2).children('td').eq(1).text();
+                var cyberpunk=$('.ui-widget-content').eq(24).children('td').eq(1).text();
+                var regime=$('.ui-widget-content').eq(36).children('td').eq(1).text();
+                if(!$('.ui-widget-content').eq(2).children('td').eq(0).text().includes('Denominación o')){
+                    razonSocial=$('.ui-widget-content').eq(3).children('td').eq(1).text() + ' ' + $('.ui-widget-content').eq(4).children('td').eq(1).text() + ' ' + $('.ui-widget-content').eq(5).children('td').eq(1).text();
+                    cyberpunk=$('.ui-widget-content').eq(26).children('td').eq(1).text();
+                    regime=$('.ui-widget-content').eq(38).children('td').eq(1).text();
+                }
+                regime=regime.replace('Régimen de las','');
+                regime=regime.replace('Régimen del','');
+                regime=regime.replace('Régimen de el','');
+                regime=regime.replace('Régimen del','');
+                regime=regime.replace('Régimen de','');
+                regime=regime.replace('Régimen ','');
+                for (var i = 0; i < preregimes.length; i++) {
+                    if (preregimes[i].toUpperCase().includes(regime.toUpperCase())) {
+                        regime = preregimes[i].substring(0, 3);  // Extract first 3 characters
+                        break;  // If you find the match, no need to continue the loop
+                    }
+                }
+                const params = new URLSearchParams({
+                    order: porderz,
+                    total: ptotalz,
+                    name: razonSocial,
+                    rfc: rfc,
+                    zip: cyberpunk,
+                    email: "",
+                    regime: regime,
+                    cfdi: "G03",
+                });
+
+                console.log('rfc',rfc);
+                console.log('razon social',razonSocial);
+                console.log('cp',cyberpunk);
+                console.log('regime',regime);
+                const nurl=`https://parapaquetes.com/pages/facturacion/${params.toString().replace(/\./g, "_")}`;
+                console.log(nurl);
+                window.location.href=nurl;
+            }
         });
     </script>
 
 </body>
 </html>
-
-
 
